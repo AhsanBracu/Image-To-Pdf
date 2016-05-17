@@ -8,11 +8,12 @@
     tools:context="com.example.ahsan.uipharmecy.MainActivity"
     tools:showIn="@layout/app_bar_main">
 
-   <ImageView
-       android:id="@+id/image"
-       android:layout_width="match_parent"
-       android:layout_height="@dimen/image_height"
-       android:src="@drawable/ic_photo_camera_black_24dp"/>
+    <LinearLayout
+        android:id="@+id/group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"></LinearLayout>
+
     <include
         layout="@layout/app_footer"
         android:layout_width="match_parent"
