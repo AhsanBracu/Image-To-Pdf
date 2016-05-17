@@ -1,7 +1,16 @@
 package com.example.ahsan.uipharmecy;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
+import android.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -10,14 +19,33 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.ahsan.uipharmecy.util.Constant;
+import com.example.ahsan.uipharmecy.util.ExifUtil;
+import com.example.ahsan.uipharmecy.util.BitmapUtils;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private FragmentManager mFragmentManager;
+    private MainFragment mMainFragMent;
+    private Bitmap mBitmap, mOrientedBitmap;
+    private Context mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
+        mContext = getApplicationContext();
+        mFragmentManager = getFragmentManager();
+        setView();
+    }
+
+    public void setView() {
+        mMainFragMent = new MainFragment();
+        android.app.FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.group, mMainFragMent, getResources().getString(R.string.main));
+        fragmentTransaction.commit();
     }
 
     void initViews() {
@@ -44,7 +72,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -54,15 +81,38 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_photo) {
+            startActivityForResult(BitmapUtils.getPickImageChooserIntent(MainActivity.this), Constant.IMAGE_PICKER_CODE);
         }
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == Constant.IMAGE_PICKER_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri imageUri = BitmapUtils.getPickImageResultUri(data, mContext);
+                String picturePath = BitmapUtils.getRealPathFromURI(imageUri, mContext);
+                boolean requirePermissions = false;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                        checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
+                        BitmapUtils.isUriRequiresPermissions(imageUri, mContext)) {
+                    requirePermissions = true;
+                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+                }
+                if (!requirePermissions) {
+                    mBitmap = BitmapUtils.makeBitmap(imageUri, mContext);
+                    mOrientedBitmap = ExifUtil.rotateBitmap(picturePath, mBitmap);
+                    mMainFragMent.setImageView(mOrientedBitmap);
+                }
+            }
+        }
     }
 }
